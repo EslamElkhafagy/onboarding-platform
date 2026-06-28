@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: onboarding-platform
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/onboarding}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 25MB
+
+app:
+  jwt:
+    # Override in production via env var. Must be at least 32 bytes for HS256.
+    secret: ${JWT_SECRET:change-me-to-a-long-random-secret-of-32+chars}
+    expiration-ms: 86400000  # 24h
+  storage:
+    # Base directory for uploaded document files. Override in production.
+    dir: ${STORAGE_DIR:./data/uploads}
+  invite:
+    # How long a new-hire invite link stays valid before it must be re-sent.
+    expiry-hours: ${INVITE_EXPIRY_HOURS:168}  # 7 days
+  ai:
+    # Selects which AI provider implementations are wired in:
+    #   paid   -> OpenAI embeddings + Anthropic chat (needs API keys, costs money)
+    #   free   -> built-in offline stub (no keys, no network, $0; rough quality)
+    #   ollama -> local models via Ollama (free to run; needs Ollama installed + models pulled)
+    provider: ${AI_PROVIDER:paid}
+    openai:
+      base-url: https://api.openai.com/v1
+      api-key: ${OPENAI_API_KEY:}        # required for embeddings (ingestion + chat retrieval)
+    anthropic:
+      base-url: https://api.anthropic.com/v1
+      api-key: ${ANTHROPIC_API_KEY:}     # required for grounded chat answers
+      model: claude-haiku-4-5            # swap to an Opus id for higher quality
+      version: 2023-06-01
+      max-tokens: 1024
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat-model: ${OLLAMA_CHAT_MODEL:llama3.1}
+      embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+    embeddings:
+      model: text-embedding-3-small
+      dimension: 1536                    # MUST match the documents schema vector(1536)
+    retry:
+      max-attempts: 3                    # total tries for transient AI failures (429/5xx/network)
+      backoff-ms: 500                    # base backoff; doubles each retry (500, 1000, ...)
+  rag:
+    top-k: 5                             # chunks retrieved per question
+    min-score: 0.25                      # cosine-similarity floor; below this -> "I don't know" fallback
+
+server:
+  port: ${PORT:8080}
