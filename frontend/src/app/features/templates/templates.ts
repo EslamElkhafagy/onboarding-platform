@@ -1,11 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/api';
+import { SearchSelect, SelectOption } from '../../shared/search-select';
 import { DocumentResponse, TemplateResponse, User } from '../../models';
 
 @Component({
   selector: 'app-templates',
-  imports: [FormsModule],
+  imports: [FormsModule, SearchSelect],
   template: `
     <h1>Checklist templates</h1>
     <p class="muted">
@@ -86,31 +87,26 @@ import { DocumentResponse, TemplateResponse, User } from '../../models';
             placeholder="Due day"
             class="narrow"
           />
-          @if (documents().length) {
-            <select
-              multiple
-              [(ngModel)]="draft(t.id).docIds"
-              name="docs-{{ t.id }}"
-              class="narrow"
-              title="Attach study documents (optional; Ctrl/Cmd-click for multiple)"
-            >
-              @for (d of documents(); track d.id) {
-                <option [ngValue]="d.id">{{ d.filename }}</option>
-              }
-            </select>
-          }
+          <app-search-select
+            [options]="docOptions()"
+            [(selected)]="draft(t.id).docIds"
+            [multiple]="true"
+            placeholder="Attach documents… (optional)"
+            emptyText="No documents uploaded yet"
+          />
           <button type="submit" [disabled]="!draft(t.id).title.trim()">Add item</button>
         </form>
 
         <div class="inline-form" style="margin-top:0.6rem; border-top:1px solid var(--border); padding-top:0.8rem">
           <span class="muted">Assign to:</span>
-          <select [(ngModel)]="assignee[t.id]" name="assign-{{ t.id }}" [disabled]="!t.items.length">
-            <option [ngValue]="undefined" disabled selected>Choose a person…</option>
-            @for (u of users(); track u.id) {
-              <option [ngValue]="u.id">{{ u.fullName || u.email }} ({{ u.role === 'ADMIN' ? 'Admin' : 'Hire' }})</option>
-            }
-          </select>
-          <button type="button" (click)="assign(t)" [disabled]="!assignee[t.id] || !t.items.length">Assign</button>
+          <app-search-select
+            [options]="userOptions()"
+            [selected]="assigneeFor(t.id)"
+            (selectedChange)="assignee[t.id] = $event"
+            placeholder="Search people…"
+            emptyText="No people yet — invite a hire above"
+          />
+          <button type="button" (click)="assign(t)" [disabled]="!assigneeFor(t.id).length || !t.items.length">Assign</button>
           @if (!t.items.length) {
             <span class="muted" style="font-size:0.82rem">Add at least one item first.</span>
           }
@@ -143,7 +139,24 @@ export class Templates implements OnInit {
   protected inviteName = '';
   protected inviteEmail = '';
   protected inviteStart = '';
-  protected assignee: Record<string, string | undefined> = {};
+  protected assignee: Record<string, string[]> = {};
+
+  /** Options for the searchable pickers. */
+  protected readonly docOptions = computed<SelectOption[]>(() =>
+    this.documents().map((d) => ({ id: d.id, label: d.filename })),
+  );
+  protected readonly userOptions = computed<SelectOption[]>(() =>
+    this.users().map((u) => ({
+      id: u.id,
+      label: u.fullName || u.email,
+      hint: u.role === 'ADMIN' ? 'Admin' : 'Hire',
+    })),
+  );
+
+  /** Current single selection for a template's assign picker (0 or 1 id). */
+  assigneeFor(templateId: string): string[] {
+    return this.assignee[templateId] ?? [];
+  }
 
   private readonly drafts = new Map<
     string,
@@ -221,14 +234,14 @@ export class Templates implements OnInit {
   }
 
   assign(template: TemplateResponse): void {
-    const userId = this.assignee[template.id];
+    const userId = this.assigneeFor(template.id)[0];
     if (!userId) return;
     const who = this.users().find((u) => u.id === userId);
     this.api.assignChecklist(template.id, userId).subscribe({
       next: () => {
         const name = who?.fullName || who?.email || 'the hire';
         this.setAssignMsg(template.id, `Assigned to ${name}. They'll see it under My checklist.`);
-        this.assignee[template.id] = undefined;
+        this.assignee[template.id] = [];
       },
       error: (err) =>
         this.setAssignMsg(template.id, err?.error?.error?.message ?? 'Could not assign.'),

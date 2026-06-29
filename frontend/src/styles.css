@@ -252,6 +252,19 @@ button.full { width: 100%; }
 .doc-ref { display: flex; gap: 0.55rem; align-items: center; flex-wrap: wrap; font-size: 0.85rem; }
 .doc-name { color: var(--text); }
 
+/* Searchable select (document attach + assign-to person) */
+.search-select { display: flex; flex-direction: column; gap: 0.35rem; min-width: 220px; }
+.ss-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.chip.removable { display: inline-flex; align-items: center; gap: 0.3rem; }
+.chip-x { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; }
+.ss-field { position: relative; }
+.ss-field input { margin-top: 0; width: 100%; }
+.ss-options { position: absolute; z-index: 20; left: 0; right: 0; margin: 0.2rem 0 0; padding: 0.25rem; list-style: none; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); max-height: 220px; overflow-y: auto; }
+.ss-options li button { display: flex; justify-content: space-between; gap: 0.6rem; align-items: center; width: 100%; text-align: left; background: transparent; border: none; padding: 0.4rem 0.55rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text); }
+.ss-options li button:hover { background: var(--primary-tint); color: var(--primary-dark); }
+.ss-hint { font-size: 0.78rem; }
+.ss-empty { padding: 0.4rem 0.55rem; font-size: 0.82rem; }
+
 /* Checklist / progress */
 .progress-row { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.9rem; }
 .progress-bar { background: var(--bg-soft); border-radius: 999px; height: 9px; overflow: hidden; flex: 1; }
