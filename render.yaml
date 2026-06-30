@@ -1,0 +1,32 @@
+# Render Blueprint — deploys the whole app (Angular SPA + Spring Boot API) as one Docker
+# web service on the free plan. Bring your own free Postgres (Supabase/Neon) and set the
+# DB_* secrets in the Render dashboard.
+#
+# Deploy: push this repo to GitHub -> Render > New > Blueprint -> pick the repo.
+services:
+  - type: web
+    name: onboarding-platform
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: AI_PROVIDER
+        value: free                 # offline stub: $0, no keys. Switch to "paid" + add keys later.
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: JWT_SECRET
+        generateValue: true         # Render generates a long random secret (>=32 chars)
+      # ---- Postgres (from Supabase/Neon) — set these in the dashboard, do NOT commit them ----
+      - key: DB_URL
+        sync: false                 # e.g. jdbc:postgresql://HOST:5432/DB?sslmode=require
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # ---- Optional: enable real RAG quality later ----
+      # - key: OPENAI_API_KEY
+      #   sync: false
+      # - key: ANTHROPIC_API_KEY
+      #   sync: false

@@ -1,0 +1,23 @@
+# Build outputs / deps (rebuilt inside the image)
+target/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Local data & secrets — must never go into the image
+data/
+*.env
+.env
+.env.*
+
+# VCS / IDE / OS noise
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Docs not needed at build time
+*.md
+!README.md

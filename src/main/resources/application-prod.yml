@@ -1,0 +1,23 @@
+# Production profile (activated via SPRING_PROFILES_ACTIVE=prod).
+# Only overrides what differs from application.yml; everything else (datasource, app.*,
+# server.port) is still driven by the same env vars.
+spring:
+  datasource:
+    hikari:
+      # Free Postgres tiers (Supabase/Neon) cap connections low. Keep the pool small so we
+      # never exhaust the server-side limit, especially with the pooled (pgBouncer) endpoint.
+      maximum-pool-size: ${DB_POOL_MAX:5}
+      minimum-idle: ${DB_POOL_MIN:1}
+      connection-timeout: 30000
+      # Recycle connections well before a serverless DB idles them out.
+      max-lifetime: 240000
+      idle-timeout: 120000
+  jpa:
+    open-in-view: false
+
+# Trim startup/log noise on a small instance.
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO
